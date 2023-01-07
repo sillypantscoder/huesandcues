@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+.circle {
+	display: inline-block;
+	position: absolute;
+	--rad: 100px;
+	--centery: calc(var(--y) - var(--rad));
+	top: calc(var(--centery) + var(--offset));
+	left: calc(var(--x) - var(--rad));
+	width: calc(var(--rad) * 2);
+	height: calc(var(--rad) * 2);
+	background-color: #FFFA;
+	border: 1px solid black;
+	border-radius: 50%;
+}
+.guesses div {
+	position: absolute;
+	top: calc(var(--y) + var(--offset));
+	background: white;
+}
+/* Color wheel styles */
+.colorwheel {
+	background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%));
+	width: 50em;
+	height: 30em;
+}
+.colorwheel::after {
+	content: "";
+	background: radial-gradient(circle, white 0%, transparent 50%, transparent 100%);
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+		</style>
+	</head>
+	<body>
+		<div>
+			<div>The clue was:</div>
+			<ul><li>{{INSERT CLUE HERE}}</li></ul>
+		</div>
+		<div id="colorselection">
+			<div>Players' guesses:</div>
+			<div class="colorwheel"></div>
+			<div id="actual"></div>
+			<div class="guesses">{{INSERT GUESSES HERE}}</div>
+		</div>
+		<script src="/colorwheel.js"></script>
+		<script src="/addscore.js"></script>
+		<script>
+setTimeout(() => {
+	location.reload()
+}, 2000)
+
+var circlepos = // INSERT RESULT HERE
+	null;
+if (circlepos != null) {
+	// 0.5 point circle
+	var e = document.createElement("div")
+	e.classList.add("circle")
+	e.setAttribute("style", `--x: ${circlepos[0]}px; --y: ${circlepos[1]}px;`)
+	document.querySelector("#actual").appendChild(e)
+	// 1.5 point circle
+	var e = document.createElement("div")
+	e.classList.add("circle")
+	e.setAttribute("style", `--x: ${circlepos[0]}px; --y: ${circlepos[1]}px; --rad: 40px;`)
+	document.querySelector("#actual").appendChild(e)
+	// Done button
+	var e = document.createElement("button")
+	e.innerText = "Done"
+	e.setAttribute("onclick", "done()")
+	document.body.appendChild(e)
+	// Icon
+	var e = document.createElement("link")
+	e.setAttribute("rel", "icon")
+	e.setAttribute("href", "/results.ico")
+	document.head.appendChild(e)
+} else {
+	// Icon
+	var e = document.createElement("link")
+	e.setAttribute("rel", "icon")
+	e.setAttribute("href", "/wait.ico")
+	document.head.appendChild(e)
+}
+document.body.setAttribute("style", "--offset: " + getOffset(document.querySelector(".colorwheel")) + "px;")
+function done() {
+	var x = new XMLHttpRequest()
+	x.open("POST", "/clear")
+	x.send("{{INSERT PLAYER NAME HERE}}")
+}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+body:not([data-selectedcolor]) #confirm_guess {
+	display: none;
+}
+.colorchoice {
+	display: inline-block;
+	width: 5em;
+	height: 5em;
+	margin: 1em;
+}
+/* Color wheel styles */
+.colorwheel {
+	background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%));
+	width: 50em;
+	height: 30em;
+}
+.colorwheel::after {
+	content: "";
+	background: radial-gradient(circle, white 0%, transparent 50%, transparent 100%);
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+		</style>
+		<link rel="icon" href="/guess.ico">
+	</head>
+	<body>
+		<div>
+			<div>The clue was:</div>
+			<ul><li>{{INSERT CLUE HERE}}</li></ul>
+		</div>
+		<div id="colorselection">
+			<div>Select a color to guess:</div>
+			<div class="colorwheel"></div>
+		</div>
+		<div id="confirm_guess">
+			<div>Guess this color?</div>
+			<div class="colorchoice"></div><br>
+			<button onclick="submit()">Confirm</button>
+		</div>
+		<script src="/colorwheel.js"></script>
+		<script src="/addscore.js"></script>
+		<script>
+document.querySelector(".colorwheel").addEventListener("click", (e) => {
+	document.body.dataset.selectedcolor = `${Math.round(e.x)}\n${Math.round(e.y - getOffset(document.querySelector(".colorwheel")))}`
+	// Update color preview
+	var rect = e.target.getBoundingClientRect()
+	var color = getColorWheelPointColor(rect, e.x, e.y)
+	document.querySelector(".colorchoice").setAttribute("style", `background: ${color};`)
+})
+function submit() {
+	var x = new XMLHttpRequest()
+	x.open("POST", "/submitguess")
+	x.addEventListener("loadend", () => {
+		location.replace("/game/wait_guesses?name={{INSERT NAME HERE}}")
+	})
+	x.send(`{{INSERT NAME HERE}}\n${document.body.dataset.selectedcolor}`)
+}
+		</script>
+	</body>
+</html>

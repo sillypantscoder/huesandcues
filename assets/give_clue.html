@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+.colorchoice {
+	display: inline-block;
+	width: 5em;
+	height: 5em;
+	margin: 1em;
+}
+.colorchoice[data-selected="true"] {
+	outline: 0.5em solid black;
+}
+body:not([data-chosencolor]) #clue {
+	display: none;
+}
+/* Color wheel styles */
+.colorwheel {
+	/* background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%)); */
+	width: 50em;
+	height: 30em;
+	/* Color wheel does not need to be seen! */
+		position: absolute;
+		pointer-events: none;
+}
+/* .colorwheel::after {
+	content: "";
+	background: radial-gradient(circle, white 0%, transparent 50%, transparent 100%);
+	width: 100%;
+	height: 100%;
+	display: block;
+} */
+		</style>
+		<link rel="icon" href="/give_clue.ico">
+	</head>
+	<body>
+		<div id="colorselection">
+			<div>Select a color to clue:</div>
+			<div class="colorwheel"></div>
+			<div id="colorselection"></div>
+		</div>
+		<div id="clue">
+			<div>Enter a clue for this color:</div>
+			<input type="text" id="clue_text">
+			<button onclick="submit()">Submit</button>
+		</div>
+		<script src="/colorwheel.js"></script>
+		<script src="/addscore.js"></script>
+		<script>
+var color_options = {{INSERT COLOR OPTIONS HERE}}
+for (var i = 0; i < 3; i++) {
+	((i) => {
+		// Get a random color
+		var rect = document.querySelector(".colorwheel").getBoundingClientRect()
+		var selected = color_options[i]
+		var color = getColorWheelPointColor(rect, selected[0], selected[1])
+		// Create the color choice element
+		var e = document.createElement("div")
+		e.classList.add("colorchoice")
+		e.setAttribute("style", `background: ${color};`)
+		e.dataset.selected = "false"
+		e.addEventListener("click", (v) => {
+			document.body.dataset.chosencolor = `${selected[0]}\n${selected[1]}`
+			var es = document.querySelector("#colorselection").children
+			for (var n = 1; n < es.length; n++) {
+				es[n].dataset.selected = String(es[n] == e)
+			}
+		})
+		document.querySelector("#colorselection").appendChild(e)
+	})(i)
+}
+document.querySelector(".colorwheel").addEventListener("click", (e) => {
+	var rect = e.target.getBoundingClientRect()
+	var color = getColorWheelPointColor(rect, e.x, e.y)
+	document.querySelector(".colorchoice").setAttribute("style", `background: ${color};`)
+	document.body.dataset.chosencolor = `${e.x}\n${e.y}`
+})
+function submit() {
+	var x = new XMLHttpRequest()
+	x.open("POST", "/submitclue")
+	x.addEventListener("loadend", (e) => {
+		location.reload()
+	})
+	x.send(document.body.dataset.chosencolor + "\n" + document.querySelector("#clue_text").value)
+}
+		</script>
+	</body>
+</html>

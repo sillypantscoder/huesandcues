@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	height: 100vh;
+}
+		</style>
+		<link rel="icon" href="/wait.ico">
+	</head>
+	<body>
+		<div>Wait for everyone else to finish...</div>
+		<script src="/addscore.js"></script>
+		<script>
+setTimeout(() => {
+	location.reload()
+}, 2000)
+		</script>
+	</body>
+</html>
