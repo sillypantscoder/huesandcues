@@ -2,6 +2,19 @@
 <html>
 	<head>
 		<style>
+.circle {
+	display: inline-block;
+	position: absolute;
+	--rad: 100px;
+	/*--centery: calc(var(--y) - var(--rad));*/
+	top: calc(var(--y) - var(--rad));
+	left: calc(var(--x) - var(--rad));
+	width: calc(var(--rad) * 2);
+	height: calc(var(--rad) * 2);
+	background-color: #FFFA;
+	border: 1px solid black;
+	border-radius: 50%;
+}
 .colorchoice {
 	display: inline-block;
 	width: 5em;
@@ -16,30 +29,30 @@ body:not([data-chosencolor]) #clue {
 }
 /* Color wheel styles */
 .colorwheel {
-	/* background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%)); */
-	width: 50em;
-	height: 30em;
-	/* Color wheel does not need to be seen! */
-		position: absolute;
-		pointer-events: none;
+	background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%));
+	width: 800px;
+	height: 480px;
 }
-/* .colorwheel::after {
+.colorwheel::after {
 	content: "";
 	background: radial-gradient(circle, white 0%, transparent 50%, transparent 100%);
 	width: 100%;
 	height: 100%;
 	display: block;
-} */
+}
 		</style>
 		<link rel="icon" href="/give_clue.ico">
 	</head>
 	<body>
 		<div id="colorselection">
 			<div>Select a color to clue:</div>
-			<div class="colorwheel"></div>
 			<div id="colorselection"></div>
 		</div>
 		<div id="clue">
+			<div class="colorwheel">
+				<div class="circle" id="circle05"></div>
+				<div class="circle" id="circle15"></div>
+			</div>
 			<div>Enter a clue for this color:</div>
 			<input type="text" id="clue_text">
 			<button onclick="submit()">Submit</button>
@@ -48,12 +61,23 @@ body:not([data-chosencolor]) #clue {
 		<script src="/addscore.js"></script>
 		<script>
 var color_options = {{INSERT COLOR OPTIONS HERE}}
+function updateColorWheel() {
+	try {
+	circlepos = [document.body.dataset.chosencolor.split("\n")[0], document.body.dataset.chosencolor.split("\n")[1]]
+	// 1.5 point circle
+	var e = document.querySelector("#circle15")
+	e.setAttribute("style", `--x: ${circlepos[0]}px; --y: ${circlepos[1]}px;`)
+	// 0.5 point circle
+	var e = document.querySelector("#circle05")
+	e.setAttribute("style", `--x: ${circlepos[0]}px; --y: ${circlepos[1]}px; --rad: 40px;`)
+	} catch(e) { alert(e.message) }
+}
 for (var i = 0; i < 3; i++) {
 	((i) => {
 		// Get a random color
 		var rect = document.querySelector(".colorwheel").getBoundingClientRect()
 		var selected = color_options[i]
-		var color = getColorWheelPointColor(rect, selected[0], selected[1])
+		var color = getColorWheelPointColor(selected[0], selected[1])
 		// Create the color choice element
 		var e = document.createElement("div")
 		e.classList.add("colorchoice")
@@ -65,15 +89,16 @@ for (var i = 0; i < 3; i++) {
 			for (var n = 1; n < es.length; n++) {
 				es[n].dataset.selected = String(es[n] == e)
 			}
+			updateColorWheel()
 		})
 		document.querySelector("#colorselection").appendChild(e)
 	})(i)
 }
 document.querySelector(".colorwheel").addEventListener("click", (e) => {
 	var rect = e.target.getBoundingClientRect()
-	var color = getColorWheelPointColor(rect, e.x, e.y)
-	document.querySelector(".colorchoice").setAttribute("style", `background: ${color};`)
-	document.body.dataset.chosencolor = `${e.x}\n${e.y}`
+	var color = getColorWheelPointColor(e.x - rect.left, e.y - rect.top)
+	//document.querySelector(".colorchoice").setAttribute("style", `background: ${color};`)
+	document.body.dataset.chosencolor = `${e.x - rect.left}\n${e.y - rect.top}`
 })
 function submit() {
 	var x = new XMLHttpRequest()

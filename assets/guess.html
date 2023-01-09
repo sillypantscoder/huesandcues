@@ -14,8 +14,8 @@ body:not([data-selectedcolor]) #confirm_guess {
 /* Color wheel styles */
 .colorwheel {
 	background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%));
-	width: 50em;
-	height: 30em;
+	width: 800px;
+	height: 480px;
 }
 .colorwheel::after {
 	content: "";
@@ -45,10 +45,10 @@ body:not([data-selectedcolor]) #confirm_guess {
 		<script src="/addscore.js"></script>
 		<script>
 document.querySelector(".colorwheel").addEventListener("click", (e) => {
-	document.body.dataset.selectedcolor = `${Math.round(e.x)}\n${Math.round(e.y - getOffset(document.querySelector(".colorwheel")))}`
-	// Update color preview
 	var rect = e.target.getBoundingClientRect()
-	var color = getColorWheelPointColor(rect, e.x, e.y)
+	document.body.dataset.selectedcolor = `${Math.round(e.x - rect.left)}\n${Math.round(e.y - rect.top)}`
+	// Update color preview
+	var color = getColorWheelPointColor(e.x - rect.left, e.y - rect.top)
 	document.querySelector(".colorchoice").setAttribute("style", `background: ${color};`)
 })
 function submit() {
