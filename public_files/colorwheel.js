@@ -1,6 +1,6 @@
 function coordsToAngle(x, y) { return Math.atan2(y, x) * 180 / Math.PI; }
 Math.dist = (p1, p2) => Math.sqrt(((p2[0] - p1[0]) ** 2) + ((p2[1] - p1[1]) ** 2))
-function getColorWheelPointColor(x, y) {
+function getColorWheelPointColor(x, y, raw) {
 	var ypc = y / 480
 	var xpc = x / 800
 	xpc = (xpc - 0.5) * 2
@@ -14,6 +14,7 @@ function getColorWheelPointColor(x, y) {
 		var pc = dist / 266
 		val += (1 - pc) * 50
 	}
+	if (raw) return [angle, val]
 	return `hsl(${angle}deg, 100%, ${val}%)`
 }
 function getOffset(elm) {

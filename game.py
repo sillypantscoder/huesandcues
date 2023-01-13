@@ -111,18 +111,9 @@ class Game:
 					},
 					"content": read_file("assets/wait_finish.html")
 				}
-				playerinfo = []
-				for i in range(len(self.players)):
-					if self.guesses[i] != None:
-						playerdist = math.dist((int(self.guesses[i][0]), int(self.guesses[i][1])), (int(self.clue.splitlines()[0]), int(self.clue.splitlines()[1])))
-						displayname = self.players[i]
-						if playerdist < 40: displayname += ' +1.5'
-						elif playerdist < 100: displayname += ' +0.5'
-						playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{displayname}</div>")
 				# Assemble content
 				content = read_file("assets/wait_guess.html")\
 					.replace("{{INSERT CLUE HERE}}", self.clue.split("\n")[2])\
-					.replace("{{INSERT GUESSES HERE}}", ''.join(playerinfo))\
 					.replace("// INSERT RESULT HERE", f"[{self.clue.splitlines()[0]}, {self.clue.splitlines()[1]}]")\
 					.replace("{{INSERT PLAYER NAME HERE}}", playername)
 				return {
@@ -153,12 +144,49 @@ class Game:
 			}
 		elif path.split("?")[0] == "/getscore":
 			playername = ''.join(path.split("?")[1:])[5:]
+			try:
+				return {
+					"status": 200,
+					"headers": {
+						"Content-Type": "text/plain"
+					},
+					"content": str(self.score[self.players.index(playername)])
+				}
+			except:
+				return {
+					"status": 500,
+					"headers": {
+						"Content-Type": "text/plaikn"
+					},
+					"content": "Not logged in"
+				}
+		elif path.split("?")[0] == "/game/get_guesses":
+			playerinfo = []
+			for i in range(len(self.players)):
+				if self.guesses[i] != None:
+					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{self.players[i]}</div>")
 			return {
 				"status": 200,
 				"headers": {
-					"Content-Type": "text/plain"
+					"Content-Type": "text/html"
 				},
-				"content": str(self.score[self.players.index(playername)])
+				"content": ''.join(playerinfo) if self.status != GameStatus.SHOW_RESULTS else "RELOAD"
+			}
+		elif path.split("?")[0] == "/game/get_guesses_final":
+			playerinfo = []
+			for i in range(len(self.players)):
+				if self.guesses[i] != None:
+					playerdist = math.dist((int(self.guesses[i][0]), int(self.guesses[i][1])), (int(self.clue.splitlines()[0]), int(self.clue.splitlines()[1])))
+					displayname = self.players[i]
+					if playerdist < 40: displayname += ' +1.5'
+					elif playerdist < 100: displayname += ' +0.5'
+					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{displayname}</div>")
+			return {
+				"status": 200,
+				"headers": {
+					"Content-Type": "text/html"
+				},
+				"content": ''.join(playerinfo)
 			}
 		else: # 404 page
 			print("Invalid GET to " + path)
@@ -193,7 +221,9 @@ class Game:
 				"content": f""
 			}
 		elif path == "/clear":
-			self.done[self.players.index(body.decode('UTF-8'))] = True
+			try:
+				self.done[self.players.index(body.decode('UTF-8'))] = True
+			except: print("FAILED")
 			self.msg(f"{body.decode('UTF-8')} is done")
 			if self.status == GameStatus.SHOW_RESULTS:
 				if False not in [x == True for x in self.done]:

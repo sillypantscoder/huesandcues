@@ -44,13 +44,31 @@
 			<div>Players' guesses:</div>
 			<div class="colorwheel"></div>
 			<div id="actual"></div>
-			<div class="guesses">{{INSERT GUESSES HERE}}</div>
+			<div class="guesses"></div>
 		</div>
 		<script src="/colorwheel.js"></script>
 		<script src="/addscore.js"></script>
 		<script>
-setTimeout(() => {
-	location.reload()
+var refresh_interval_id = setInterval(() => {
+	var x = new XMLHttpRequest()
+	x.open("GET", "/game/get_guesses")
+	x.addEventListener("loadend", (e) => {
+		var t = e.target.responseText
+		if (t == "RELOAD") {
+			if (circlepos == null) location.reload()
+			else {
+				clearInterval(refresh_interval_id)
+				var z = new XMLHttpRequest()
+				z.open("GET", "/game/get_guesses_final")
+				z.addEventListener("loadend", (e) => {
+					var t = e.target.responseText
+					document.querySelector(".guesses").innerHTML = t
+				})
+				z.send()
+			}
+		} else document.querySelector(".guesses").innerHTML = t
+	})
+	x.send()
 }, 2000)
 
 var circlepos = // INSERT RESULT HERE
@@ -87,6 +105,9 @@ document.body.setAttribute("style", "--offset: " + getOffset(document.querySelec
 function done() {
 	var x = new XMLHttpRequest()
 	x.open("POST", "/clear")
+	x.addEventListener("loadend", (e) => {
+		location.reload()
+	})
 	x.send("{{INSERT PLAYER NAME HERE}}")
 }
 		</script>
