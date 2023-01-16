@@ -1,6 +1,7 @@
 import os
 import math
 import random
+from urllib.parse import unquote
 
 class GameStatus:
 	WAIT_TO_BEGIN = 0
@@ -56,7 +57,7 @@ class Game:
 			if len(self.players) >= 2 and self.status == GameStatus.WAIT_TO_BEGIN:
 				self.cluer = random.choice(self.players)
 				self.status = GameStatus.WAIT_FOR_CLUE
-				self.msg(f"Cluer is: {self.cluer} (out of {self.players})")
+				self.msg(f"Cluer is: {unquote(self.cluer)} (out of {self.players})")
 				self.clue = [[random.randint(0, 800), random.randint(0, 480)] for zzz in range(3)]
 			# Main
 			playername = ''.join(path.split("?")[1:])[5:]
@@ -65,7 +66,7 @@ class Game:
 				self.guesses.append(None)
 				self.score.append(0.0)
 				self.done.append(False)
-				self.msg(f"Added player: {playername}")
+				self.msg(f"Added player: {unquote(playername)}")
 			if self.status == GameStatus.WAIT_TO_BEGIN:
 				# WAITING TO BEGIN
 				return {
@@ -91,7 +92,7 @@ class Game:
 						"headers": {
 							"Content-Type": "text/html"
 						},
-						"content": read_file("assets/wait_clue.html").replace("{{INSERT CLUE GIVER HERE}}", self.cluer)
+						"content": read_file("assets/wait_clue.html").replace("{{INSERT CLUE GIVER HERE}}", unquote(self.cluer))
 					}
 			if self.status == GameStatus.WAIT_FOR_PLAYER_GUESS and not playername == self.cluer:
 				# WAITING FOR THE PLAYERS' GUESSES
@@ -156,7 +157,7 @@ class Game:
 				return {
 					"status": 500,
 					"headers": {
-						"Content-Type": "text/plaikn"
+						"Content-Type": "text/plain"
 					},
 					"content": "Not logged in"
 				}
@@ -164,7 +165,7 @@ class Game:
 			playerinfo = []
 			for i in range(len(self.players)):
 				if self.guesses[i] != None:
-					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{self.players[i]}</div>")
+					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{unquote(self.players[i])}</div>")
 			return {
 				"status": 200,
 				"headers": {
@@ -180,7 +181,7 @@ class Game:
 					displayname = self.players[i]
 					if playerdist < 40: displayname += ' +1.5'
 					elif playerdist < 100: displayname += ' +0.5'
-					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{displayname}</div>")
+					playerinfo.append(f"<div style='--y: {self.guesses[i][1]}px; left: {self.guesses[i][0]}px;'>{unquote(displayname)}</div>")
 			return {
 				"status": 200,
 				"headers": {
@@ -210,7 +211,7 @@ class Game:
 		elif path == "/submitguess":
 			b = body.decode("UTF-8").split("\n")
 			self.guesses[self.players.index(b[0])] = [b[1], b[2]]
-			self.msg(f"{b[0]} guessed: {b[1]}, {b[2]}")
+			self.msg(f"{unquote(b[0])} guessed: {b[1]}, {b[2]}")
 			if self.guesses.count(None) <= 1:
 				self.status = GameStatus.SHOW_RESULTS
 				self.msg(f"Everyone's done guessing!")
@@ -224,7 +225,7 @@ class Game:
 			try:
 				self.done[self.players.index(body.decode('UTF-8'))] = True
 			except: print("FAILED")
-			self.msg(f"{body.decode('UTF-8')} is done")
+			self.msg(f"{unquote(body.decode('UTF-8'))} is done")
 			if self.status == GameStatus.SHOW_RESULTS:
 				if False not in [x == True for x in self.done]:
 					self.msg(f"Everyone's finished! Updating scoreboard...")
@@ -243,7 +244,7 @@ class Game:
 					# Print results
 					print("\n--- SCORES ---")
 					for i in range(len(self.players)):
-						print(f" {self.players[i]}: {o_score[i]} + {self.score[i] - o_score[i]} = {self.score[i]}")
+						print(f" {unquote(self.players[i])}: {o_score[i]} + {self.score[i] - o_score[i]} = {self.score[i]}")
 					# Reset
 					self.status = GameStatus.WAIT_TO_BEGIN
 					self.guesses = [None for x in self.guesses]
