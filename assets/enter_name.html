@@ -10,10 +10,18 @@ body {
 	margin: 0;
 	height: 100vh;
 }
+@media (max-width: 30em) {
+	body {
+		font-size: 7vw;
+	}
+}
+input, button {
+	font-size: inherit !important;
+}
 		</style>
 	</head>
 	<body>
-		<div>Enter your name:</div>
+		<div>Enter your name, you goobers:</div>
 		<div><input type="text" id="a"></div>
 		<div><button onclick="submit()">Submit</button></div>
 		<script>
