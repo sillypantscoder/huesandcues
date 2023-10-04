@@ -1,5 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from game import Game
+from game import Game, pwd
 
 hostName = "0.0.0.0"
 serverPort = 8080
@@ -39,6 +39,7 @@ if __name__ == "__main__":
 	webServer = HTTPServer((hostName, serverPort), MyServer)
 	webServer.timeout = 1
 	print("Server started http://%s:%s" % (hostName, serverPort))
+	print(f" (pwd is: {pwd})")
 	while running:
 		try:
 			webServer.handle_request()

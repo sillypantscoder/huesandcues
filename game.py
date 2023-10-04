@@ -26,6 +26,9 @@ def write_file(filename, content):
 	f.write(content)
 	f.close()
 
+pwd = ''.join([random.choice([*"ABCDEFGHIKLMNPQRSTUVWXYZ0123456789"]) for x in range(4)])
+pending = []
+
 class Game:
 	def __init__(self):
 		self.status = GameStatus.WAIT_TO_BEGIN
@@ -36,6 +39,49 @@ class Game:
 		self.score = []
 		self.done = []
 	def get(self, path):
+		if path == "/status_" + pwd:
+			return {
+				"status": 200,
+				"headers": {
+					"Content-Type": "text/html"
+				},
+				"content": """<!DOCTYPE html>
+<html>
+	<head>
+		<title>Game Status</title>
+	</head>
+	<body>
+		<h1>Game Status</h1>
+		<div style="font-family: monospace; white-space: pre;" id="t"></div>
+		<div><input type="text" enterheyhint="send" onkeydown="if (event.key == 'Enter') sendMsg(this.value)"><button onclick="sendMsg(this.previousElementSibling.value)">Send</button></div>
+		<script>
+setInterval(() => {
+	var x = new XMLHttpRequest()
+	x.open("GET", location.pathname + "/s/")
+	x.addEventListener("loadend", (e) => {
+		document.querySelector("#t").innerText = e.target.responseText
+	})
+	x.send()
+}, 1000)
+function sendMsg(t) {
+	var x = new XMLHttpRequest()
+	x.open("GET", location.pathname + "/s/" + t)
+	x.send()
+	document.querySelector("input").value = ""
+}
+		</script>
+	</body>
+</html>"""
+			}
+		elif path.startswith("/status_" + pwd + "/s/"):
+			d = path[len("/status_" + pwd + "/s/"):]
+			return {
+				"status": 200,
+				"headers": {
+					"Content-Type": "text/plain"
+				},
+				"content": self.get_status(unquote(d))
+			}
 		if os.path.isfile(os.path.join("public_files", path[1:])):
 			return {
 				"status": 200,
@@ -62,11 +108,14 @@ class Game:
 			# Main
 			playername = ''.join(path.split("?")[1:])[5:]
 			if playername not in self.players:
-				self.players.append(playername)
-				self.guesses.append(None)
-				self.score.append(0.0)
-				self.done.append(False)
-				self.msg(f"Added player: {unquote(playername)}")
+				if playername not in pending: pending.append(playername)
+				return {
+					"status": 200,
+					"headers": {
+						"Content-Type": "text/html"
+					},
+					"content": read_file("assets/admit.html")
+				}
 			if self.status == GameStatus.WAIT_TO_BEGIN:
 				# WAITING TO BEGIN
 				return {
@@ -177,7 +226,7 @@ class Game:
 			playerinfo = []
 			for i in range(len(self.players)):
 				if self.guesses[i] != None:
-					playerdist = math.dist((int(self.guesses[i][0]), int(self.guesses[i][1])), (int(self.clue.splitlines()[0]), int(self.clue.splitlines()[1])))
+					playerdist = math.dist((float(self.guesses[i][0]), float(self.guesses[i][1])), (float(self.clue.splitlines()[0]), float(self.clue.splitlines()[1])))
 					displayname = self.players[i]
 					if playerdist < 40: displayname += ' +1.5'
 					elif playerdist < 100: displayname += ' +0.5'
@@ -282,3 +331,61 @@ class Game:
 				if self.guesses[p] != None: bars += 1
 		bar = ("=" * bars).ljust(maxbars, ' ')
 		print(f"- [{bar}] {message}")
+	def get_status(self, inkey):
+		r = ""
+		# Status
+		r += f"Status: {['Waiting to begin', 'Waiting for a clue', 'Waiting for player guesses', 'Showing the results'][self.status]}\n"
+		# Player list
+		r += f"Players:\n"
+		for i in range(len(self.players)):
+			r += f"\t- (r{i}) {self.players[i]}"
+			if self.players[i] == self.cluer:
+				if self.status == GameStatus.WAIT_FOR_CLUE: r += f" [CLUE OPTIONS: {', '.join([f'({x[0]}, {x[1]})' for x in self.clue])}]"
+				else:
+					c = self.clue.split("\n")
+					r += f" [CLUE: ({c[0]}, {c[1]}) -> {repr(c[2])}]"
+			r += f" [score: {self.score[i]}]"
+			if self.guesses[i]: r += f" [guess: ({int(self.guesses[i][0])}, {int(self.guesses[i][1])})]"
+			if self.done[i]: r += f" [done!]"
+			r += "\n"
+			if inkey == f"r{i}":
+				# goodbye :/
+				del self.players[i]
+				del self.guesses[i]
+				del self.score[i]
+				del self.done[i]
+				return "deleted player!"
+		# Pending player list:
+		r += "\nPending players:\n"
+		for i in range(len(pending)):
+			playername = pending[i]
+			r += f"\t- (a/d {i}) {playername}\n"
+			if inkey == f"a{i}":
+				inkey = f"d{i}"
+				self.players.append(playername)
+				self.guesses.append(None)
+				self.score.append(0.0)
+				self.done.append(False)
+				self.msg(f"Added player: {unquote(playername)}")
+			if inkey == f"d{i}":
+				pending.remove(playername)
+		# Other info
+		r += "\n(m <name>) Manually add player\n"
+		if inkey.startswith("m"):
+			playername = inkey[1:]
+			self.players.append(playername)
+			self.guesses.append(None)
+			self.score.append(0.0)
+			self.done.append(False)
+			self.msg(f"Added player: {unquote(playername)}")
+		r += "(s<player> <name>=<value>, ...) Set player data"
+		if inkey.startswith("s"):
+			playeri = int(inkey.split(" ")[0][1:])
+			data = ' '.join(inkey.split(" ")[1:]).split(", ")
+			for d in data:
+				name = d.split("=")[0]
+				value = d.split("=")[1]
+				if name == "score": self.score[playeri] = float(value)
+				if name == "done": self.done[playeri] = value == "true"
+		# Finish
+		return r
